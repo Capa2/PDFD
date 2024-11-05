@@ -4,7 +4,8 @@
 ### Project Files ###
 
 docs/
-test_ignore/
+data/
+out/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
