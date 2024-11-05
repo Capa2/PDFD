@@ -18,17 +18,11 @@ def ping_url(url):
 
 def get_valid_url(url, alt_url):
     if is_valid_url(url):
-        print(f"VALID URL: {url}")
         if ping_url(url):
-            print(f"RESPONSIVE URL: {url}")
             return url
-    print("ATTEMPTING ALT URL...")
     if is_valid_url(alt_url):
-        print(f"VALID URL: {alt_url}")
         if ping_url(alt_url):
-            print(f"RESPONSIVE URL: {alt_url}")
             return alt_url
-    print(f"BOTH URL FAIL: {url} AND {alt_url}")
     return None
 
 def is_valid_id(id):

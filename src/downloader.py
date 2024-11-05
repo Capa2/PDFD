@@ -1,21 +1,45 @@
-import os
+#async_downloader.py
+
 import requests
+import asyncio
+import aiohttp
 from pathlib import Path
-from utils import excel_writer
+import config_loader
 
-def download_pdfs(valid_requests, output_folder):
-    output_folder = Path(output_folder)
-    output_folder.mkdir(parents=True, exist_ok=True)
+config = config_loader.load_config()
 
-    for request in valid_requests:
-        pdf_id = request['BRnum']
-        url = request['Validated_URL']
-        output_path = output_folder / f"{pdf_id}.pdf"
+async def safe_limited_download(sem, session, url, output_path):
+    try:
+        if sem:
+            async with sem:
+                await download(session, url, output_path)
+        else:
+            await download(session, url, output_path)
+    except aiohttp.ClientError as e:
+        print(f"Failed to download {url}: {e}")
+        
+async def download(session, url, output_path):
+    async with session.get(url) as response:
+        response.raise_for_status()
+        with open(output_path, 'wb') as file:
+            while True:
+                chunk = await response.content.read(1024)
+                if not chunk: break
+                file.write(chunk)
+    print(f"Downloaded: {output_path}")
 
-        try:
-            response = requests.get(url, stream=True)
-            response.raise_for_status()
-            excel_writer.write_from_iterator(response.iter_content(chunk_size=8192), output_path)
-            print(f"Downloaded: {pdf_id}.pdf")
-        except requests.RequestException as e:
-            print(f"Failed to download {pdf_id}: {e}")
+async def download_requests(requests):
+    sem = asyncio.Semaphore(config['download_limit']) if config['download_limit'] else None
+    async with aiohttp.ClientSession() as session:
+        tasks = [
+            safe_limited_download(
+                sem=sem, 
+                session=session,  
+                url=request['Validated_URL'], 
+                output_path=config['output'] / f"{request[config['id_column']]}.pdf"
+            )
+            for request in requests
+        ]
+
+        await asyncio.gather(*tasks)
+            

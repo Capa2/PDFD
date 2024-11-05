@@ -1,5 +1,6 @@
 #request_handler.py
-from utils import excel_reader
+
+import excel_reader
 import validator
 
 def get_requests(path, id_field, primary_url, alternative_url):

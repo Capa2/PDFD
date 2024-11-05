@@ -1,4 +1,4 @@
-# utils/csv_reader.py
+# csv_reader.py
 
 import pandas as pd
 import chardet
