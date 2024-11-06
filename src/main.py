@@ -2,25 +2,28 @@
 import config_loader as config_loader
 from tabulate import tabulate
 import request_handler
-import downloader
-import downloader
 import asyncio
+import downloader
 
 config = config_loader.load_config()
 
-def main():
-    valid_requests, invalid_requests = request_handler.validate_and_split(
-        path=config["input"], 
-        id_field=config["id_column"], 
-        primary_url=config["primary_url_column"], 
-        alternative_url=config["alt_url_column"], 
-        limit=config["download_limit"]
+async def main():
+    print("Starting main...")
+
+    requests = request_handler.get_requests()
+
+    print(f"Retrieved {len(requests)} requests")
+
+    queue = asyncio.Queue()
+
+    validation_complete_event = asyncio.Event()
+
+    await asyncio.gather(
+        request_handler.validate_requests(requests, queue, validation_complete_event),
+        downloader.download_from_queue(queue, validation_complete_event)
     )
 
-    print(f"Found {len(valid_requests)} valid URLs. Downloading...\n")
-    #print(tabulate(valid_requests, headers="keys"))
-
-    asyncio.run(downloader.download_requests(valid_requests))
+    print("Main completed")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

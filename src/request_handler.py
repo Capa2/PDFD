@@ -1,38 +1,57 @@
 #request_handler.py
-
 import excel_reader
 import validator
+import aiohttp
+import asyncio
+import config_loader
 
-def get_requests(path, id_field, primary_url, alternative_url):
-    return excel_reader.get_dict(path, [id_field, primary_url, alternative_url])
+config = config_loader.load_config()
 
-def validate_and_split(path, id_field, primary_url, alternative_url, limit=None):
-    requests = get_requests(path, id_field, primary_url, alternative_url)
+def get_requests(
+        path=config["input"], 
+        id_field=config["id_column"], 
+        primary_url=config["primary_url_column"], 
+        alternative_url=config["alt_url_column"], 
+        request_limit=config['request_limit']):
     
-    valid_requests = []
-    invalid_requests = []
+    requests = excel_reader.get_dict(path, [id_field, primary_url, alternative_url])
+    return requests if request_limit is None else requests[:request_limit]
 
-    for i, request in enumerate(requests):
-        if limit and i >= limit:
-            break
+async def validate_url(sem, session, request, queue, max_retries=config['max_retries']):
+    async with sem:
+        id_value = request[config['id_column']]
+        primary_url_value = request[config['primary_url_column']]
+        alternative_url_value = request[config['alt_url_column']]
 
-        id_value = request[id_field]
-        primary_url_value = request[primary_url]
-        alternative_url_value = request[alternative_url]
+        print(f"Validating {id_value}...")
 
-        validated_url = validator.get_valid_url(primary_url_value, alternative_url_value)
+        retries = 0
+        validated_url = None
 
-        if validated_url is not None:
-            valid_requests.append({
-                id_field: id_value, 
-                'Validated_URL': validated_url, 
-                'Secondary_URL': alternative_url_value if validated_url == primary_url_value else primary_url_value
-            })
-        else:
-            invalid_requests.append({
-                id_field: id_value, 
-                'Primary_URL': primary_url_value, 
-                'Alternative_URL': alternative_url_value
-            })
+        while retries < max_retries and validated_url is None:
+            validated_url = await validator.get_valid_url(session, primary_url_value, alternative_url_value)
+        
+            if validated_url is not None:
+                print(f"Validated {id_value}. Adding to queue...")
+                await queue.put({
+                config['id_column']: id_value,
+                'validated_url': validated_url,
+                'other_url': primary_url_value if validated_url == alternative_url_value else alternative_url_value
+                })
 
-    return valid_requests, invalid_requests
+            else:
+                retries += 1
+                await asyncio.sleep(2)
+                print(f"Retrying validation for {id_value} (attempt {retries}/{max_retries}...)")
+
+async def validate_requests(requests, queue, validation_complete_event, max_retries=config['max_retries']):
+    print("Validating requests...")
+    sem = asyncio.Semaphore(config['concurrency_max'])
+    async with aiohttp.ClientSession() as session:
+        tasks = [
+            validate_url(sem, session, request, queue, max_retries)
+            for request in requests
+        ]
+        await asyncio.gather(*tasks)
+    validation_complete_event.set()
+    print("Validation complete")
