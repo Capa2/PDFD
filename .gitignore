@@ -6,6 +6,7 @@
 docs/
 data/
 out/
+log/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
