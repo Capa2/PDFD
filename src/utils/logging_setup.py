@@ -8,18 +8,22 @@ summary_log_file = log_dir / "summary.log"
 
 log_dir.mkdir(parents=True, exist_ok=True)
 
+# Clear logs
+with open(detailed_log_file, 'w', encoding='utf-8') as file: file.truncate()
+with open(summary_log_file, 'w', encoding='utf-8') as file: file.truncate()
+
 detailed_logger = logging.getLogger("detailed_logger")
 detailed_logger.setLevel(logging.INFO)
-detailed_handler = logging.FileHandler(detailed_log_file)
-detailed_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-detailed_logger.addHandler(detailed_handler)
+_detailed_handler = logging.FileHandler(detailed_log_file, encoding='utf-8')
+_detailed_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+detailed_logger.addHandler(_detailed_handler)
 
 summary_logger = logging.getLogger("summary_logger")
 summary_logger.setLevel(logging.INFO)
-summary_handler = logging.FileHandler(summary_log_file)
-summary_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-summary_logger.addHandler(summary_handler)
+_summary_handler = logging.FileHandler(summary_log_file, encoding='utf-8')
+_summary_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+summary_logger.addHandler(_summary_handler)
 
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
-summary_logger.addHandler(console_handler)
+_console_handler = logging.StreamHandler()
+_console_handler.setFormatter(logging.Formatter("%(levelname)s - %(message)s"))
+summary_logger.addHandler(_console_handler)
