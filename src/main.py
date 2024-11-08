@@ -1,5 +1,6 @@
 # main.py
-from core import report_fetcher, report_processor
+from core import report_processor
+from file_ops import report_fetcher
 from services import download_service
 from utils import config_manager
 from utils.logging_setup import detailed_logger, summary_logger
@@ -20,7 +21,7 @@ async def main():
             report_processor.process_reports(reports, queue, validation_complete_event),
             download_service.download_from_queue(queue, validation_complete_event)
         )
-        
+
         summary_logger.info("Main process completed successfully.")
     except Exception as e:
         detailed_logger.error(f"An error occurred in the main process: {str(e)}", exc_info=True)
