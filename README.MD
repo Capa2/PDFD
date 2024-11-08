@@ -1,4 +1,4 @@
-# PDF Download and Report Tracker Module
+# Mass PDF Download Module
 
 This module is designed to validate and download reports from URLs provided in a spreadsheet, track download statuses, and update an Excel report.
 
