@@ -59,27 +59,27 @@ The config.ini file contains paths, column names, and settings:
     - retry_failed_download: If False, the script will skip reports with previous download failures.
 
 ## Usage
-To start the validation and download process, run the main script:
+To start the validation and download process, edit the config.ini run the main.py script:
 
-from core import report_fetcher, report_processor
-from services import download_service
-from utils import config_manager
-import asyncio
-
-settings = config_manager.load_settings()
-
-async def main():
-    reports = report_fetcher.fetch_reports()
-    queue = asyncio.Queue()
-    validation_complete_event = asyncio.Event()
-
-    await asyncio.gather(
-        report_processor.process_reports(reports, queue, validation_complete_event),
-        download_service.download_from_queue(queue, validation_complete_event)
-    )
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    from core import report_fetcher, report_processor
+    from services import download_service
+    from utils import config_manager
+    import asyncio
+    
+    settings = config_manager.load_settings()
+    
+    async def main():
+        reports = report_fetcher.fetch_reports()
+        queue = asyncio.Queue()
+        validation_complete_event = asyncio.Event()
+    
+        await asyncio.gather(
+            report_processor.process_reports(reports, queue, validation_complete_event),
+            download_service.download_from_queue(queue, validation_complete_event)
+        )
+    
+    if __name__ == "__main__":
+        asyncio.run(main())
 
 ## Status
 
